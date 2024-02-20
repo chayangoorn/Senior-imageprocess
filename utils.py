@@ -30,6 +30,26 @@ def genE(w, h):
 	cv2.imwrite("template.jpg", E)
 	return E
 
+def genEback(w, h):
+	E = np.zeros((h,w))
+	E[:,int(E.shape[1]/2):] = 255
+	n = int(E.shape[0]/5)
+	for i in range(5):
+		if i in [0,2]: E[n*i:n*(i+1),:int(E.shape[1]/2)] = 255
+		elif i==4: E[n*i:,:int(E.shape[1]/2)] = 255
+	cv2.imwrite("template.jpg", E)
+	return E
+
+def matTemp(image, template):
+	image = cv2.threshold(image, 128, 255, cv2.THRESH_OTSU)[1]
+	result = cv2.matchTemplate(image,template,cv2.TM_CCORR_NORMED)
+	minVal,maxVal,minLoc,maxLoc = cv2.minMaxLoc(result)
+	loc = maxLoc
+	w, h = template.shape[::-1]
+	toploc = (loc[0] + w, loc[1] + h)
+	d = cv2.rectangle(image,loc,toploc,(0,0,255),1)
+	return (d, loc[0],loc[1],w,h,maxVal)
+
 def findBiggest(contours, img):
 	if len(contours) != 0:
 		d1 = cv2.drawContours(img, contours, -1, 255, 1)
