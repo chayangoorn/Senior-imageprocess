@@ -5,9 +5,48 @@ from utils import adjust_gamma, sobel_edge_detector, findBiggest, arcLengths, ge
 from skimage.morphology import (erosion, dilation, closing, opening, area_closing)
 from skimage.morphology import square
 
+def get_combined_image_array(picture): # ใช้ matrix จาก grayscale
+    color_array = []
+    for i in range(len(picture)):
+        value = 0
+        for j in picture[i]:
+            value += j
+        value = value/len(picture[i])
+        color_array.append(value)
+    return color_array
+
+def plot_graph(array):
+    x = np.array(array)
+    y = np.array([i+1 for i in range(len(array))])
+    y_reverse = y[::-1]
+    plt.plot(x, y_reverse)
+    plt.show()
+    return None
+
+def draw_range_line(img,line_dist): #ต้อง copy ก่อน
+    for i in range(img.shape[0]//line_dist):
+        #start = (0,(i+1)*line_dist)
+        start = (0,i*line_dist+img.shape[0]%line_dist)
+        #end = (img.shape[1],(i+1)*line_dist)
+        end = (img.shape[1],i*line_dist+img.shape[0]%line_dist)
+        color = (0, 255, 0) 
+        img = cv2.line(img, start, end, color, 1)
+    picture = img
+    return picture
+
+def draw_steepest_slope(img,array):
+    diff_array = abs(np.diff(array))
+    point = np.argmax(diff_array)
+    start = (0,point)
+    end = (img.shape[1],point)
+    color = (0, 255, 0) 
+    img = cv2.line(img, start, end, color, 1)
+    picture = img
+    return picture
+
 cropped = []; staff_guage_idx = 0; staff_height = 0
 # pre-processing image to crop staff gauge
-img = cv2.imread("staff4.jpg")
+img = cv2.imread("staff5.jpg")
 img1 = cv2.resize(img, (int((480/img.shape[0])*img.shape[1]), 480))
 img2 = img1.copy()
 gamma = adjust_gamma(img1, 2)
@@ -102,9 +141,17 @@ num_staff_frame = staff.shape[0]//staff_height
 last_frame = staff.shape[0]%staff_height
 for j in range(int(num_staff_frame)+1):
     cv2.line(staff, (0, int(j*staff_height)), (staff.shape[1], int(j*staff_height)), (0,255,0), 2)
-cv2.imshow("lines",staff)
+cv2.imshow("lines",clos)
 cv2.waitKey(0)
 print(num_staff_frame, last_frame)
+
+test_picture = g
+test = get_combined_image_array(test_picture)
+plot_graph(test)
+water_level = draw_steepest_slope(test_picture,test)
+cv2.imshow("water level",water_level)
+cv2.waitKey(0)
+
 """
     ---- compare biggest contour with upper frame for check that contour is E ---- 
     if y-h<0:
