@@ -1,13 +1,15 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-from utils import adjust_gamma, sobel_edge_detector, findBiggest, arcLengths, genE, genEback, matTemp
+from utils import adjust_gamma, sobel_edge_detector, findBiggest, arcLengths, genE, genEback, matTemp, trialK
 from skimage.morphology import (erosion, dilation, closing, opening, area_closing)
 from skimage.morphology import square
+from tqdm import tqdm
+from scipy import stats
 
 cropped = []; staff_guage_idx = 0; staff_height = 0
 # pre-processing image to crop staff gauge
-img = cv2.imread("staff4.jpg")
+img = cv2.imread("staff5.jpg")
 img1 = cv2.resize(img, (int((480/img.shape[0])*img.shape[1]), 480))
 img2 = img1.copy()
 gamma = adjust_gamma(img1, 2)
@@ -88,7 +90,7 @@ for i, (c, point, ct) in enumerate(cropped):
         print("count matching:", len(loc[0]))
         if len(loc[0]) > 0: 
             staff_guage_idx = i
-            staff_height = h/2
+            staff_height = h
         cv2.imwrite("drawings.jpg", img5)
         cv2.imshow("verify E",img5)
         cv2.waitKey(0)
@@ -96,151 +98,52 @@ for i, (c, point, ct) in enumerate(cropped):
         print("Not found area")
 
 # water level reading
-staff = cropped[staff_guage_idx][0]
-print(staff.shape)
-first_h = []
-for j in range(8):
-    if j==0:
-        prob = []; draws = []
-        for k in range(int(staff_height/2)):
-            genE(int(staff.shape[1]/2), int(staff_height)-k)
-            temp = cv2.threshold(cv2.imread("template.jpg", 0), 128, 255, cv2.THRESH_OTSU)[1]
-            section = cv2.cvtColor(staff[:int(staff_height), :], cv2.COLOR_BGR2GRAY)
-            res = matTemp(section, temp) 
-            (d, x, y, w, h, p) = res
-            print(p)
-            prob.append(p); draws.append(d)
-        if len(prob)>0:
-            minus = np.argmax(np.array(prob))
-            first_h.append([minus, prob[minus], draws[minus]])
-            cv2.imshow("first section",draws[minus])
-            cv2.waitKey(0)
-        else: pass
-    elif j==1:
-        print("--------------------")
-        prob = []; draws = []
-        for k in range(int(staff_height/2)):
-            genE(int(staff.shape[1]/2), int(staff_height)-k)
-            temp = cv2.threshold(cv2.imread("template.jpg", 0), 128, 255, cv2.THRESH_OTSU)[1]
-            temp = cv2.bitwise_not(temp)
-            section = cv2.cvtColor(staff[:int(staff_height), :], cv2.COLOR_BGR2GRAY)
-            res = matTemp(section, temp) 
-            (d, x, y, w, h, p) = res
-            print(p)
-            prob.append(p); draws.append(d)
-        if len(prob)>0:
-            minus = np.argmax(np.array(prob))
-            first_h.append([minus, prob[minus], draws[minus]])
-            cv2.imshow("first section",draws[minus])
-            cv2.waitKey(0)
-        else: pass
-    elif j==2:
-        print("--------------------")
-        prob = []; draws = []
-        for k in range(int(staff_height/2)):
-            genEback(int(staff.shape[1]/2), int(staff_height)-k)
-            temp = cv2.threshold(cv2.imread("template.jpg", 0), 128, 255, cv2.THRESH_OTSU)[1]
-            section = cv2.cvtColor(staff[:int(staff_height), :], cv2.COLOR_BGR2GRAY)
-            res = matTemp(section, temp)
-            (d, x, y, w, h, p) = res
-            print(p)
-            prob.append(p); draws.append(d)
-        if len(prob)>0:
-            minus = np.argmax(np.array(prob))
-            first_h.append([minus, prob[minus], draws[minus]])
-            cv2.imshow("first section",draws[minus])
-            cv2.waitKey(0)
-        else: pass
-    elif j==3:
-        print("--------------------")
-        prob = []; draws = []
-        for k in range(int(staff_height/2)):
-            genEback(int(staff.shape[1]/2), int(staff_height)-k)
-            temp = cv2.threshold(cv2.imread("template.jpg", 0), 128, 255, cv2.THRESH_OTSU)[1]
-            temp = cv2.bitwise_not(temp)
-            section = cv2.cvtColor(staff[:int(staff_height), :], cv2.COLOR_BGR2GRAY)
-            res = matTemp(section, temp)
-            (d, x, y, w, h, p) = res
-            print(p)
-            prob.append(p); draws.append(d)
-        if len(prob)>0:
-            minus = np.argmax(np.array(prob))
-            first_h.append([minus, prob[minus], draws[minus]])
-            cv2.imshow("first section",draws[minus])
-            cv2.waitKey(0)
-        else: pass
-    elif j==4:
-        print("--------------------")
-        prob = []; draws = []
-        for k in range(int(staff_height/2)):
-            genE(int(staff.shape[1]/2), int(staff_height)+k)
-            temp = cv2.threshold(cv2.imread("template.jpg", 0), 128, 255, cv2.THRESH_OTSU)[1]
-            section = cv2.cvtColor(staff[:2*int(staff_height), :], cv2.COLOR_BGR2GRAY)
-            res = matTemp(section, temp)
-            (d, x, y, w, h, p) = res
-            print(p)
-            prob.append(p); draws.append(d)
-        if len(prob)>0:
-            minus = np.argmax(np.array(prob))
-            first_h.append([minus, prob[minus], draws[minus]])
-            cv2.imshow("first section",draws[minus])
-            cv2.waitKey(0)
-        else: pass
-    elif j==5:
-        print("--------------------")
-        prob = []; draws = []
-        for k in range(int(staff_height/2)):
-            genE(int(staff.shape[1]/2), int(staff_height)+k)
-            temp = cv2.threshold(cv2.imread("template.jpg", 0), 128, 255, cv2.THRESH_OTSU)[1]
-            temp = cv2.bitwise_not(temp)
-            section = cv2.cvtColor(staff[:2*int(staff_height), :], cv2.COLOR_BGR2GRAY)
-            res = matTemp(section, temp)
-            (d, x, y, w, h, p) = res
-            print(p)
-            prob.append(p); draws.append(d)
-        if len(prob)>0:
-            minus = np.argmax(np.array(prob))
-            first_h.append([minus, prob[minus], draws[minus]])
-            cv2.imshow("first section",draws[minus])
-            cv2.waitKey(0)
-        else: pass
-    elif j==6:
-        print("--------------------")
-        prob = []; draws = []
-        for k in range(int(staff_height/2)):
-            genEback(int(staff.shape[1]/2), int(staff_height)+k)
-            temp = cv2.threshold(cv2.imread("template.jpg", 0), 128, 255, cv2.THRESH_OTSU)[1]
-            section = cv2.cvtColor(staff[:2*int(staff_height), :], cv2.COLOR_BGR2GRAY)
-            res = matTemp(section, temp)
-            (d, x, y, w, h, p) = res
-            print(p)
-            prob.append(p); draws.append(d)
-        if len(prob)>0:
-            minus = np.argmax(np.array(prob))
-            first_h.append([minus, prob[minus], draws[minus]])
-            cv2.imshow("first section",draws[minus])
-            cv2.waitKey(0)
-        else: pass
-    elif j==7:
-        prob = []; draws = []
-        for k in range(int(staff_height/2)):
-            genEback(int(staff.shape[1]/2), int(staff_height)+k)
-            temp = cv2.threshold(cv2.imread("template.jpg", 0), 128, 255, cv2.THRESH_OTSU)[1]
-            temp = cv2.bitwise_not(temp)
-            section = cv2.cvtColor(staff[:2*int(staff_height), :], cv2.COLOR_BGR2GRAY)
-            res = matTemp(section, temp)
-            (d, x, y, w, h, p) = res
-            print(p)
-            prob.append(p); draws.append(d)
-        if len(prob)>0:
-            minus = np.argmax(np.array(prob))
-            first_h.append([minus, prob[minus], draws[minus]])
-            cv2.imshow("first section",draws[minus])
-            cv2.waitKey(0)
-        else: pass
+staff = cv2.resize(cropped[staff_guage_idx][0], (0,0), fx=2, fy=2)
+height_dataset = []
+for z in range(int(staff.shape[0]//staff_height)):
+    if z==0:
+        y = 0
+        height = 0
+    #cutsection = trialK(staff, staff_height, y, 20)
+    cutsection = []
+    for t in tqdm(range(1,50)):
+        cut = trialK(staff, staff_height, y, t)
+        if cut!=False: cutsection.append(cut)
+    heights = [c[3] for c in cutsection]
+    mode_height = max(set(heights), key=heights.count)
+    print(heights, "most height", mode_height)
+    """
+    max_prob_idx = np.argmax(np.array([q[0] for q in cutsection]))
+    cutsection = cutsection[max_prob_idx]
+    print(cutsection)
+    """
+    if len(heights)>0 and mode_height>0:
+        height = mode_height
+        y = y+height
+        height_dataset.append(((z+1)*0.05, y))
+        print("*******************")
+        print("new height:", height,"at:", y)
+        cv2.line(staff, (0,y), (staff.shape[1],y), (0,0,255), 2)
+    else: pass
+cv2.imwrite("cutsection.jpg", staff)
+print(height_dataset)
+x_set = np.array([h[1] for h in height_dataset])
+y_set = np.array([h[0] for h in height_dataset])
 
-print(first_h)
+slope, intercept, r, p, std_err = stats.linregress(x_set, y_set)
 
+def fitLinear(x):
+  return slope * x + intercept
+
+mymodel = list(map(fitLinear, x_set))
+
+plt.scatter(x_set, y_set)
+plt.plot(x_set, mymodel)
+plt.show()
+
+print(staff.shape[0])
+water_level = 1 - fitLinear(staff.shape[0])
+print("water level", water_level)
 """
     ---- compare biggest contour with upper frame for check that contour is E ---- 
     if y-h<0:
