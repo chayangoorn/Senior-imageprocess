@@ -30,6 +30,26 @@ def genE(w, h):
 	cv2.imwrite("template.jpg", E)
 	return E
 
+def genEback(w, h):
+	E = np.zeros((h,w))
+	E[:,int(E.shape[1]/2):] = 255
+	n = int(E.shape[0]/5)
+	for i in range(5):
+		if i in [0,2]: E[n*i:n*(i+1),:int(E.shape[1]/2)] = 255
+		elif i==4: E[n*i:,:int(E.shape[1]/2)] = 255
+	cv2.imwrite("template.jpg", E)
+	return E
+
+def matTemp(image, template):
+	image = cv2.threshold(image, 128, 255, cv2.THRESH_OTSU)[1]
+	result = cv2.matchTemplate(image,template,cv2.TM_CCORR_NORMED)
+	minVal,maxVal,minLoc,maxLoc = cv2.minMaxLoc(result)
+	loc = maxLoc
+	w, h = template.shape[::-1]
+	toploc = (loc[0] + w, loc[1] + h)
+	d = cv2.rectangle(image,loc,toploc,(0,0,255),1)
+	return (d, loc[0],loc[1],w,h,maxVal)
+
 def findBiggest(contours, img):
 	if len(contours) != 0:
 		d1 = cv2.drawContours(img, contours, -1, 255, 1)
@@ -47,52 +67,6 @@ def findBiggest(contours, img):
 			return (d2, x, y, w, h)
 		else: return "Not found"
 	else: return "Not have contours"
-		
-	
-def findtwoBiggest(contours, img):
-	if len(contours)!=0:
-		d1 = cv2.drawContours(img, contours, -1, 255, 1)
-		data = []
-		c = sorted(contours, key=cv2.contourArea, reverse=True)[:2]
-		for i in range(len(c)):
-			print(cv2.contourArea(c[i]))
-			x,y,w,h = cv2.boundingRect(c[i])
-			data.append((x,y,w,h))
-			d2 = cv2.rectangle(img,(x,y),(x+w,y+h),(0,255,0),2)
-
-		return d2, data
-
-def findShortestHeight(contours, img):
-	if len(contours) != 0:
-    # draw in blue the contours that were founded
-		d1 = cv2.drawContours(img, contours, -1, 255, 1)
-		rects = []
-		for c in contours:
-			x,y,w,h = cv2.boundingRect(c)
-			rects.append((h,w,x,y))
-    #c = min(contours, key = cv2.contourArea)
-    #print(cv2.contourArea(c))
-		rects = sorted(rects)
-		print(rects)
-		d2 = cv2.rectangle(img,(rects[0][2],rects[0][3]),(rects[0][2]+rects[0][1],rects[0][3]+rects[0][0]),(0,255,0),2)
-	#return d2, x, y, w, h
-	return d2, rects[0]
-
-def findLongestHeight(contours, img):
-	if len(contours) != 0:
-    # draw in blue the contours that were founded
-		d1 = cv2.drawContours(img, contours, -1, 255, 1)
-		rects = []
-		for c in contours:
-			x,y,w,h = cv2.boundingRect(c)
-			rects.append((h,w,x,y))
-    #c = min(contours, key = cv2.contourArea)
-    #print(cv2.contourArea(c))
-		rects = sorted(rects, reverse=True)
-		print(rects)
-		d2 = cv2.rectangle(img,(rects[0][2],rects[0][3]),(rects[0][2]+rects[0][1],rects[0][3]+rects[0][0]),(0,255,0),2)
-	#return d2, x, y, w, h
-	return d2, rects[0]
 
 def adjust_gamma(image, gamma):
 	# build a lookup table mapping the pixel values [0, 255] to
@@ -110,12 +84,121 @@ def sobel_edge_detector(img):
 	grad_norm = (grad * 255 / grad.max()).astype(np.uint8)
 	return grad_norm
 
-def multi_dil(im, num, element=square(3)):
-	for i in range(num):
-		im = dilation(im, element)
-	return im
-
-def multi_ero(im, num, element=square(3)):
-	for i in range(num):
-		im = erosion(im, element)
-	return im
+def trialK(staff, staff_height, vrt, weight):
+	first_h = []
+	for j in range(8):
+		if j==0:
+			prob = []; draws = []; height = []; vertical = []
+			for k in range(int(staff_height*(weight*0.01))):
+				genE(int(staff.shape[1]/2), int(staff_height)-k)
+				temp = cv2.threshold(cv2.imread("template.jpg", 0), 128, 255, cv2.THRESH_OTSU)[1]
+				section = cv2.cvtColor(staff[vrt:vrt+int(staff_height), :int(staff.shape[1]/2)], cv2.COLOR_BGR2GRAY)
+				res = matTemp(section, temp) 
+				(d, x, y, w, h, p) = res
+				prob.append(p); draws.append(d); height.append(h); vertical.append(y)
+			if len(prob)>0:
+				minus = np.argmax(np.array(prob))
+				first_h.append([prob[minus], minus, draws[minus], height[minus], vertical[minus]])
+			else: pass
+		elif j==1:
+			prob = []; draws = []; height = []; vertical = []
+			for k in range(int(staff_height*(weight*0.01))):
+				genE(int(staff.shape[1]/2), int(staff_height)-k)
+				temp = cv2.threshold(cv2.imread("template.jpg", 0), 128, 255, cv2.THRESH_OTSU)[1]
+				temp = cv2.bitwise_not(temp)
+				section = cv2.cvtColor(staff[vrt:vrt+int(staff_height), :int(staff.shape[1]/2)], cv2.COLOR_BGR2GRAY)
+				res = matTemp(section, temp) 
+				(d, x, y, w, h, p) = res
+				prob.append(p); draws.append(d); height.append(h); vertical.append(y)
+			if len(prob)>0:
+				minus = np.argmax(np.array(prob))
+				first_h.append([prob[minus], minus, draws[minus], height[minus], vertical[minus]])
+			else: pass
+		elif j==2:
+			prob = []; draws = []; height = []; vertical = []
+			for k in range(int(staff_height*(weight*0.01))):
+				genEback(int(staff.shape[1]/2), int(staff_height)-k)
+				temp = cv2.threshold(cv2.imread("template.jpg", 0), 128, 255, cv2.THRESH_OTSU)[1]
+				section = cv2.cvtColor(staff[vrt:vrt+int(staff_height), :int(staff.shape[1]/2)], cv2.COLOR_BGR2GRAY)
+				res = matTemp(section, temp)
+				(d, x, y, w, h, p) = res
+				prob.append(p); draws.append(d); height.append(h); vertical.append(y)
+			if len(prob)>0:
+				minus = np.argmax(np.array(prob))
+				first_h.append([prob[minus], minus, draws[minus], height[minus], vertical[minus]])
+			else: pass
+		elif j==3:
+			prob = []; draws = []; height = []; vertical = []
+			for k in range(int(staff_height*(weight*0.01))):
+				genEback(int(staff.shape[1]/2), int(staff_height)-k)
+				temp = cv2.threshold(cv2.imread("template.jpg", 0), 128, 255, cv2.THRESH_OTSU)[1]
+				temp = cv2.bitwise_not(temp)
+				section = cv2.cvtColor(staff[vrt:vrt+int(staff_height), :int(staff.shape[1]/2)], cv2.COLOR_BGR2GRAY)
+				res = matTemp(section, temp)
+				(d, x, y, w, h, p) = res
+				prob.append(p); draws.append(d); height.append(h); vertical.append(y)
+			if len(prob)>0:
+				minus = np.argmax(np.array(prob))
+				first_h.append([prob[minus], minus, draws[minus], height[minus], vertical[minus]])
+			else: pass
+		elif j==4:
+			prob = []; draws = []; height = []; vertical = []
+			for k in range(int(staff_height*(weight*0.01))):
+				genE(int(staff.shape[1]/2), int(staff_height)+k)
+				temp = cv2.threshold(cv2.imread("template.jpg", 0), 128, 255, cv2.THRESH_OTSU)[1]
+				section = cv2.cvtColor(staff[vrt:vrt+2*int(staff_height), int(staff.shape[1]/2):], cv2.COLOR_BGR2GRAY)
+				res = matTemp(section, temp)
+				(d, x, y, w, h, p) = res
+				prob.append(p); draws.append(d); height.append(h); vertical.append(y)
+			if len(prob)>0:
+				minus = np.argmax(np.array(prob))
+				first_h.append([prob[minus], minus, draws[minus], height[minus], vertical[minus]])
+			else: pass
+		elif j==5:
+			prob = []; draws = []; height = []; vertical = []
+			for k in range(int(staff_height*(weight*0.01))):
+				genE(int(staff.shape[1]/2), int(staff_height)+k)
+				temp = cv2.threshold(cv2.imread("template.jpg", 0), 128, 255, cv2.THRESH_OTSU)[1]
+				temp = cv2.bitwise_not(temp)
+				section = cv2.cvtColor(staff[vrt:vrt+2*int(staff_height), int(staff.shape[1]/2):], cv2.COLOR_BGR2GRAY)
+				res = matTemp(section, temp)
+				(d, x, y, w, h, p) = res
+				prob.append(p); draws.append(d); height.append(h); vertical.append(y)
+			if len(prob)>0:
+				minus = np.argmax(np.array(prob))
+				first_h.append([prob[minus], minus, draws[minus], height[minus], vertical[minus]])
+			else: pass
+		elif j==6:
+			prob = []; draws = []; height = []; vertical = []
+			for k in range(int(staff_height*(weight*0.01))):
+				genEback(int(staff.shape[1]/2), int(staff_height)+k)
+				temp = cv2.threshold(cv2.imread("template.jpg", 0), 128, 255, cv2.THRESH_OTSU)[1]
+				section = cv2.cvtColor(staff[vrt:vrt+2*int(staff_height), int(staff.shape[1]/2):], cv2.COLOR_BGR2GRAY)
+				res = matTemp(section, temp)
+				(d, x, y, w, h, p) = res
+				prob.append(p); draws.append(d); height.append(h); vertical.append(y)
+			if len(prob)>0:
+				minus = np.argmax(np.array(prob))
+				first_h.append([prob[minus], minus, draws[minus], height[minus], vertical[minus]])
+			else: pass
+		elif j==7:
+			prob = []; draws = []; height = []; vertical = []
+			for k in range(int(staff_height*(weight*0.01))):
+				genEback(int(staff.shape[1]/2), int(staff_height)+k)
+				temp = cv2.threshold(cv2.imread("template.jpg", 0), 128, 255, cv2.THRESH_OTSU)[1]
+				temp = cv2.bitwise_not(temp)
+				section = cv2.cvtColor(staff[vrt:vrt+2*int(staff_height), int(staff.shape[1]/2):], cv2.COLOR_BGR2GRAY)
+				res = matTemp(section, temp)
+				(d, x, y, w, h, p) = res
+				prob.append(p); draws.append(d); height.append(h); vertical.append(y)
+			if len(prob)>0:
+				minus = np.argmax(np.array(prob))
+				first_h.append([prob[minus], minus, draws[minus], height[minus], vertical[minus]])
+			else: pass
+	if len(first_h)>0:
+		srt = sorted([(f[0],i) for i,f in enumerate(first_h)], reverse=True)
+		#cv2.imwrite("output.jpg", first_h[srt[0][1]][2])
+		#cv2.imshow("out",first_h[srt[0][1]][2])
+		#cv2.waitKey(0)
+		return first_h[srt[0][1]]
+	else: return False

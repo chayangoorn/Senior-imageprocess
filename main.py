@@ -1,9 +1,11 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-from utils import adjust_gamma, sobel_edge_detector, findBiggest, arcLengths, genE
+from utils import adjust_gamma, sobel_edge_detector, findBiggest, arcLengths, genE, genEback, matTemp, trialK
 from skimage.morphology import (erosion, dilation, closing, opening, area_closing)
 from skimage.morphology import square
+from tqdm import tqdm
+from scipy import stats
 
 def get_combined_image_array(picture): # ใช้ matrix จาก grayscale
     color_array = []
@@ -152,6 +154,52 @@ water_level = draw_steepest_slope(test_picture,test)
 cv2.imshow("water level",water_level)
 cv2.waitKey(0)
 
+staff = cv2.resize(cropped[staff_guage_idx][0], (0,0), fx=2, fy=2)
+height_dataset = []
+for z in range(int(staff.shape[0]//staff_height)):
+    if z==0:
+        y = 0
+        height = 0
+    #cutsection = trialK(staff, staff_height, y, 20)
+    cutsection = []
+    for t in tqdm(range(1,50)):
+        cut = trialK(staff, staff_height, y, t)
+        if cut!=False: cutsection.append(cut)
+    heights = [c[3] for c in cutsection]
+    mode_height = max(set(heights), key=heights.count)
+    print(heights, "most height", mode_height)
+    """
+    max_prob_idx = np.argmax(np.array([q[0] for q in cutsection]))
+    cutsection = cutsection[max_prob_idx]
+    print(cutsection)
+    """
+    if len(heights)>0 and mode_height>0:
+        height = mode_height
+        y = y+height
+        height_dataset.append(((z+1)*0.05, y))
+        print("*******************")
+        print("new height:", height,"at:", y)
+        cv2.line(staff, (0,y), (staff.shape[1],y), (0,0,255), 2)
+    else: pass
+cv2.imwrite("cutsection.jpg", staff)
+print(height_dataset)
+x_set = np.array([h[1] for h in height_dataset])
+y_set = np.array([h[0] for h in height_dataset])
+
+slope, intercept, r, p, std_err = stats.linregress(x_set, y_set)
+
+def fitLinear(x):
+  return slope * x + intercept
+
+mymodel = list(map(fitLinear, x_set))
+
+plt.scatter(x_set, y_set)
+plt.plot(x_set, mymodel)
+plt.show()
+
+print(staff.shape[0])
+water_level = 1 - fitLinear(staff.shape[0])
+print("water level", water_level)
 """
     ---- compare biggest contour with upper frame for check that contour is E ---- 
     if y-h<0:
