@@ -86,10 +86,14 @@ def sobel_edge_detector(img):
 
 def trialK(staff, staff_height, vrt, weight):
 	first_h = []
+	start = int(staff_height*((weight-1)*0.01))
+	stop = int(staff_height*(weight*0.01))
+	if start == stop:
+		stop += 1
 	for j in range(8):
 		if j==0:
 			prob = []; draws = []; height = []; vertical = []
-			for k in range(int(staff_height*(weight*0.01))):
+			for k in range(start,stop):
 				genE(int(staff.shape[1]/2), int(staff_height)-k)
 				temp = cv2.threshold(cv2.imread("template.jpg", 0), 128, 255, cv2.THRESH_OTSU)[1]
 				section = cv2.cvtColor(staff[vrt:vrt+int(staff_height), :int(staff.shape[1]/2)], cv2.COLOR_BGR2GRAY)
@@ -102,7 +106,7 @@ def trialK(staff, staff_height, vrt, weight):
 			else: pass
 		elif j==1:
 			prob = []; draws = []; height = []; vertical = []
-			for k in range(int(staff_height*(weight*0.01))):
+			for k in range(start,stop):
 				genE(int(staff.shape[1]/2), int(staff_height)-k)
 				temp = cv2.threshold(cv2.imread("template.jpg", 0), 128, 255, cv2.THRESH_OTSU)[1]
 				temp = cv2.bitwise_not(temp)
@@ -116,7 +120,7 @@ def trialK(staff, staff_height, vrt, weight):
 			else: pass
 		elif j==2:
 			prob = []; draws = []; height = []; vertical = []
-			for k in range(int(staff_height*(weight*0.01))):
+			for k in range(start,stop):
 				genEback(int(staff.shape[1]/2), int(staff_height)-k)
 				temp = cv2.threshold(cv2.imread("template.jpg", 0), 128, 255, cv2.THRESH_OTSU)[1]
 				section = cv2.cvtColor(staff[vrt:vrt+int(staff_height), :int(staff.shape[1]/2)], cv2.COLOR_BGR2GRAY)
@@ -129,7 +133,7 @@ def trialK(staff, staff_height, vrt, weight):
 			else: pass
 		elif j==3:
 			prob = []; draws = []; height = []; vertical = []
-			for k in range(int(staff_height*(weight*0.01))):
+			for k in range(start,stop):
 				genEback(int(staff.shape[1]/2), int(staff_height)-k)
 				temp = cv2.threshold(cv2.imread("template.jpg", 0), 128, 255, cv2.THRESH_OTSU)[1]
 				temp = cv2.bitwise_not(temp)
@@ -143,7 +147,7 @@ def trialK(staff, staff_height, vrt, weight):
 			else: pass
 		elif j==4:
 			prob = []; draws = []; height = []; vertical = []
-			for k in range(int(staff_height*(weight*0.01))):
+			for k in range(start,stop):
 				genE(int(staff.shape[1]/2), int(staff_height)+k)
 				temp = cv2.threshold(cv2.imread("template.jpg", 0), 128, 255, cv2.THRESH_OTSU)[1]
 				section = cv2.cvtColor(staff[vrt:vrt+2*int(staff_height), int(staff.shape[1]/2):], cv2.COLOR_BGR2GRAY)
@@ -156,7 +160,7 @@ def trialK(staff, staff_height, vrt, weight):
 			else: pass
 		elif j==5:
 			prob = []; draws = []; height = []; vertical = []
-			for k in range(int(staff_height*(weight*0.01))):
+			for k in range(start,stop):
 				genE(int(staff.shape[1]/2), int(staff_height)+k)
 				temp = cv2.threshold(cv2.imread("template.jpg", 0), 128, 255, cv2.THRESH_OTSU)[1]
 				temp = cv2.bitwise_not(temp)
@@ -170,7 +174,7 @@ def trialK(staff, staff_height, vrt, weight):
 			else: pass
 		elif j==6:
 			prob = []; draws = []; height = []; vertical = []
-			for k in range(int(staff_height*(weight*0.01))):
+			for k in range(start,stop):
 				genEback(int(staff.shape[1]/2), int(staff_height)+k)
 				temp = cv2.threshold(cv2.imread("template.jpg", 0), 128, 255, cv2.THRESH_OTSU)[1]
 				section = cv2.cvtColor(staff[vrt:vrt+2*int(staff_height), int(staff.shape[1]/2):], cv2.COLOR_BGR2GRAY)
@@ -183,7 +187,7 @@ def trialK(staff, staff_height, vrt, weight):
 			else: pass
 		elif j==7:
 			prob = []; draws = []; height = []; vertical = []
-			for k in range(int(staff_height*(weight*0.01))):
+			for k in range(start,stop):
 				genEback(int(staff.shape[1]/2), int(staff_height)+k)
 				temp = cv2.threshold(cv2.imread("template.jpg", 0), 128, 255, cv2.THRESH_OTSU)[1]
 				temp = cv2.bitwise_not(temp)

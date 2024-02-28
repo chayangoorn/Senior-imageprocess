@@ -147,13 +147,6 @@ cv2.imshow("lines",clos)
 cv2.waitKey(0)
 print(num_staff_frame, last_frame)
 
-test_picture = g
-test = get_combined_image_array(test_picture)
-plot_graph(test)
-water_level = draw_steepest_slope(test_picture,test)
-cv2.imshow("water level",water_level)
-cv2.waitKey(0)
-
 staff = cv2.resize(cropped[staff_guage_idx][0], (0,0), fx=2, fy=2)
 height_dataset = []
 for z in range(int(staff.shape[0]//staff_height)):
@@ -161,10 +154,13 @@ for z in range(int(staff.shape[0]//staff_height)):
         y = 0
         height = 0
     #cutsection = trialK(staff, staff_height, y, 20)
-    cutsection = []
+    cutsection = []; tempo = []
     for t in tqdm(range(1,50)):
         cut = trialK(staff, staff_height, y, t)
-        if cut!=False: cutsection.append(cut)
+        if cut!=False:
+            tempo.append(cut)
+            tempo_idx = np.argmax(np.array([t[0] for t in tempo])) 
+            cutsection.append(tempo[tempo_idx])
     heights = [c[3] for c in cutsection]
     mode_height = max(set(heights), key=heights.count)
     print(heights, "most height", mode_height)
