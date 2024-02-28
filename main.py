@@ -147,6 +147,13 @@ cv2.imshow("lines",clos)
 cv2.waitKey(0)
 print(num_staff_frame, last_frame)
 
+#test_picture = g
+#test = get_combined_image_array(test_picture)
+#plot_graph(test)
+#water_level = draw_steepest_slope(test_picture,test)
+#cv2.imshow("water level",water_level)
+#cv2.waitKey(0)
+
 staff = cv2.resize(cropped[staff_guage_idx][0], (0,0), fx=2, fy=2)
 height_dataset = []
 for z in range(int(staff.shape[0]//staff_height)):
