@@ -53,17 +53,25 @@ def matTemp(image, template):
 def findBiggest(contours, img):
 	if len(contours) != 0:
 		d1 = cv2.drawContours(img, contours, -1, 255, 1)
-		max_area = 0; biggest = 0
+		#max_area = 0; biggest = 0
+		areas = []
 		for i,c in enumerate(contours):
 			area = cv2.contourArea(c)
-			if area >= 1000:
+			if area >= 200:
+				areas.append([area, c])
+				"""
 				if area > max_area: 
 					max_area = area
 					biggest = i
-		if biggest!=0:
-			x,y,w,h = cv2.boundingRect(contours[biggest])
-    	# draw the biggest contour (c) in green
-			d2 = cv2.rectangle(img,(x,y),(x+w,y+h),(0,255,0),2)
+				"""
+		areas = sorted(areas, reverse=True)
+		#if biggest!=0:
+		if len(areas)>0:
+			if len(areas)>5: r = 5
+			else: r = len(areas)
+			for i in range(r):
+				x,y,w,h = cv2.boundingRect(areas[i][1])
+				d2 = cv2.rectangle(img,(x,y),(x+w,y+h),(0,255,0),2)
 			return (d2, x, y, w, h)
 		else: return "Not found"
 	else: return "Not have contours"

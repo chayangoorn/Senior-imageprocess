@@ -87,6 +87,10 @@ else:
     print("No contours found")
 
 # verify cropped image is staff guage
+x_set = []
+y_set = []
+count = 0
+pixel_count = 0
 for i, (c, point, ct) in enumerate(cropped):
     cv2.imshow("preview",c)
     cv2.waitKey(0)
@@ -110,9 +114,34 @@ for i, (c, point, ct) in enumerate(cropped):
     cnt,_ = cv2.findContours(sobel,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
     img3 = cv2.resize(c.copy(), (0,0), fx=2, fy=2)
     biggest = findBiggest(cnt, img3)
+    cv2.imshow("preview", img3)
     if type(biggest) == tuple:
         (d2,x,y,w,h) = biggest
+        print(biggest)
+        x_set += [0,h]
 
+        y_set += [count,count+1]
+        count += 2
+
+cv2.imshow("biggest", d2)
+cv2.waitKey(0)
+
+slope, intercept, r, p, std_err = stats.linregress(x_set, y_set)
+
+def fitLinear(x):
+  return slope * x + intercept
+
+mymodel = list(map(fitLinear, x_set))
+
+plt.scatter(x_set, y_set)
+plt.plot(x_set, mymodel)
+plt.show()
+
+print(img3.shape[0])
+water_level = 1 - fitLinear(img3.shape[0])
+print("water level", water_level)
+
+"""
         # matching template by generate E template from half of cropped image width and biggest area height
         t = genE(int(img3.shape[1]/2), h)
         temp = cv2.imread("template.jpg")
@@ -153,7 +182,9 @@ print(num_staff_frame, last_frame)
 #water_level = draw_steepest_slope(test_picture,test)
 #cv2.imshow("water level",water_level)
 #cv2.waitKey(0)
+"""
 
+"""
 staff = cv2.resize(cropped[staff_guage_idx][0], (0,0), fx=2, fy=2)
 height_dataset = []
 for z in range(int(staff.shape[0]//staff_height)):
@@ -171,11 +202,13 @@ for z in range(int(staff.shape[0]//staff_height)):
     heights = [c[3] for c in cutsection]
     mode_height = max(set(heights), key=heights.count)
     print(heights, "most height", mode_height)
-    """
+"""
+"""
     max_prob_idx = np.argmax(np.array([q[0] for q in cutsection]))
     cutsection = cutsection[max_prob_idx]
     print(cutsection)
     """
+"""
     if len(heights)>0 and mode_height>0:
         height = mode_height
         y = y+height
@@ -203,6 +236,7 @@ plt.show()
 print(staff.shape[0])
 water_level = 1 - fitLinear(staff.shape[0])
 print("water level", water_level)
+"""
 """
     ---- compare biggest contour with upper frame for check that contour is E ---- 
     if y-h<0:
